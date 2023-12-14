@@ -35,8 +35,7 @@
                 <h2
                   class="text-h6 text-uppercase q-my-none text-weight-regular"
                 >
-                  Acceso a registro <br />
-                  de Aspirantes
+                  LOGIN
                 </h2>
               </div>
             </div>
@@ -60,12 +59,12 @@
                 </q-input>
               </div>
               <div id="registroTour">
-                <q-item-label
+                <!--<q-item-label
                   >¿Aún no estas registrado?
                   <router-link to="/Registro"
                     >Registrese aquí</router-link
                   ></q-item-label
-                >
+                >-->
               </div>
 
               <!-- <q-item-label
@@ -113,10 +112,12 @@ import { onBeforeMount, ref } from "vue";
 import introJs from "intro.js";
 import "intro.js/introjs.css";
 import { useAccesoStore } from "../store/acceso_store";
+import { EncryptStorage } from "storage-encryption";
 const accesoStore = useAccesoStore();
 const router = useRouter();
 const { acceso } = storeToRefs(accesoStore);
 const $q = useQuasar();
+const encryptStorage = new EncryptStorage("SECRET_KEY", "sessionStorage");
 
 const startIntro = () => {
   const intro = introJs();
@@ -153,35 +154,52 @@ const startIntro = () => {
 };
 
 const accesoSistema = async () => {
+  let mensaje = "Ingresando al sistema";
   $q.loading.show({
     spinner: QSpinnerBall,
     spinnerColor: "white",
     spinnerSize: 140,
-    message: "Ingresando al sistema",
+    message: mensaje,
     messageColor: "white",
   });
   let resp = await accesoStore.doLogin(acceso.value);
-
   if (resp.success) {
+    let permisos = await accesoStore.loadPermisos();
+    if (permisos.success == false) {
+      mensaje = "Generando los permisos del usuario";
+      let cargarPermisos = await accesoStore.createAcceso(resp.usuario_Id);
+      let { successP } = cargarPermisos;
+    }
     $q.notify({
       type: "positive",
       message: resp.data,
     });
-    window.location =
-      "http://sistema.ieenayarit.org:9472/#/?tokenE=" +
-      localStorage.getItem("tokenE") +
-      "&userNameL=" +
-      localStorage.getItem("userNameL") +
-      "&is_empleado=" +
-      resp.empleado;
-    /*window.location =
-      "http://localhost:8081/#/?tokenE=" +
-      localStorage.getItem("tokenE") +
-      "&userNameL=" +
-      localStorage.getItem("userNameL") +
-      "&is_empleado=" +
-      resp.empleado;*/
-    //router.push({ name: "Principal" });
+    if (resp.empleado_Id != null) {
+      router.push({ name: "Panel" });
+    } else if (resp.candidato_Id != null) {
+      window.location =
+        "http://sistema.ieenayarit.org:9376/#/?key=" +
+        encryptStorage.decrypt("tokenE") +
+        "&sistema=10&userNameL=" +
+        encryptStorage.decrypt("userNameL") +
+        "&candidato_id=" +
+        resp.candidato_Id;
+      /*window.location =
+        "http://192.168.0.139:8082/#/?key=" +
+        encryptStorage.decrypt("tokenE") +
+        "&sistema=3&userNameL=" +
+        encryptStorage.decrypt("userNameL"); /*
+        /*" http://sistema.ieenayarit.org:9372/#/?key=" +
+        encryptStorage.decrypt("tokenE") +
+        "&sistema=7&userNameL=" +
+        encryptStorage.decrypt("userNameL");*/
+    } else {
+      window.location =
+        "http://sistema.ieenayarit.org:9372/#/?key=" +
+        encryptStorage.decrypt("tokenE") +
+        "&sistema=7&userNameL=" +
+        encryptStorage.decrypt("userNameL");
+    }
   } else {
     $q.notify({
       type: "negative",

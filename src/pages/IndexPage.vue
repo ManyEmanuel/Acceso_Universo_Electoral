@@ -102,12 +102,14 @@ import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import { useQuasar, QSpinnerBall } from "quasar";
 import { onBeforeMount, ref } from "vue";
+import { EncryptStorage } from "storage-encryption";
 
 import { useAccesoStore } from "../store/acceso_store";
 const accesoStore = useAccesoStore();
 const router = useRouter();
 const { acceso } = storeToRefs(accesoStore);
 const $q = useQuasar();
+const encryptStorage = new EncryptStorage("SECRET_KEY", "sessionStorage");
 
 const accesoSistema = async () => {
   $q.loading.show({
@@ -130,10 +132,10 @@ const accesoSistema = async () => {
       "&userNameL=" +
       localStorage.getItem("userNameL");*/
     window.location =
-      "http://localhost:8081/#/?tokenE=" +
-      localStorage.getItem("tokenE") +
+      "http://sistema.ieenayarit.org:9372/#/?tokenE=" +
+      encryptStorage.decrypt("tokenE") +
       "&userNameL=" +
-      localStorage.getItem("userNameL");
+      encryptStorage.decrypt("userNameL");
     //router.push({ name: "Principal" });
   } else {
     $q.notify({

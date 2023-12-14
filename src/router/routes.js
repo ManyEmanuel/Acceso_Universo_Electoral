@@ -13,6 +13,11 @@ const routes = [
     component: () => import("layouts/MainLayout.vue"),
     children: [
       {
+        path: "/Panel",
+        name: "Panel",
+        component: () => import("pages/Index.vue"),
+      },
+      {
         path: "",
         name: "Principal",
         component: () => import("pages/IndexPage.vue"),
